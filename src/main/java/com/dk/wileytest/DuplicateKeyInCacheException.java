@@ -9,14 +9,10 @@ package com.dk.wileytest;
  *
  * @author dkuz
  */
-public class CacheLevel1 extends SimpleCache {
+class DuplicateKeyInCacheException extends Exception {
 
-    public CacheLevel1(int size) {
-        super(size);
+    public DuplicateKeyInCacheException(String msg) {
+        super(msg);
     }
-
-    @Override
-    public void put(Object key, Object value) {
-    }
-
+    
 }

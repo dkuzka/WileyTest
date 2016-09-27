@@ -9,6 +9,13 @@ package com.dk.wileytest;
  *
  * @author dkuz
  */
-public class NotFoundInCacheException extends Exception {
-    
+public class KeyNotFoundInCacheException extends Exception {
+
+    KeyNotFoundInCacheException() {
+        super();
+    }
+
+    KeyNotFoundInCacheException(String msg) {
+        super(msg);
+    }
 }

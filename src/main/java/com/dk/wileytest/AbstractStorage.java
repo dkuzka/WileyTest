@@ -6,7 +6,7 @@
 package com.dk.wileytest;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 /**
@@ -18,37 +18,57 @@ public class AbstractStorage implements Storage {
     private static final int MIN_SIZE = 1;
     private static final int MAX_SIZE = 1024 * 1024;
 
-    HashMap<Object, AccessAttr> keysAttr;
+    ArrayList<AccessAttr> attr;
     int capacity;
+    //private RemoveFromCacheEvent notifier;
+    
 
-    void init(int size) {
-        keysAttr = new HashMap<>(size);
+    final void init(int size) {
+        capacity = size;
+        attr = new ArrayList<>(size);
+    }
+
+    public AbstractStorage() {
+        init(1);
+    }
+
+    public AbstractStorage(int size) {
+        init(size);
     }
 
     @Override
-    public void put(Object key, Object value) {
-        while (keysAttr.size() >= capacity) {
+    public void put(Object key, Object value) throws DuplicateKeyInCacheException {
+        if (attr.stream().filter(e -> e.key.equals(key)).count() > 0) {
+            throw new DuplicateKeyInCacheException(key != null ? key.toString() : "null");
+        }
+        while (attr.size() >= capacity) {
             removeExpired();
         }
-        keysAttr.put(key, new AccessAttr());
-        capacity++;
+        attr.add(new AccessAttr(key));
+        System.out.println("DEBUG: com.dk.wileytest.AbstractStorage.put(): key=" + key + " value=" + value);
     }
 
     @Override
-    public Object get(Object key) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Object removeExpired() {
-        Object key = findExpired();
-
-        if (key != null) {
-            // remove from counter attr
-            keysAttr.remove(key);
+    public Object get(Object key) throws KeyNotFoundInCacheException {
+        System.out.println("DEBUG: com.dk.wileytest.AbstractStorage.get(): key=" + key);
+        try {
+            attr.stream().filter(e -> e.key.equals(key)).findFirst().get().inc();
+        } catch (NoSuchElementException ex) {
+            throw new KeyNotFoundInCacheException(key != null ? key.toString() : null);
         }
-        
-        return key;
+        return key; // stub
+    }
+
+    @Override
+    public AccessAttr removeExpired() {
+        AccessAttr a = findExpired();
+
+        if (a != null) {
+            // remove from counter attr
+            attr.remove(a);
+        }
+
+        return a;
     }
 
     void setSize(int newSize) {
@@ -65,21 +85,25 @@ public class AbstractStorage implements Storage {
     }
 
     @Override
-    public Object findExpired() {
-        if (keysAttr.size() < capacity) {
+    public AccessAttr findExpired() {
+        if (attr.size() < capacity) {
             return null;
         }
         // step 1: find element with min access count
-        int minCount = keysAttr.values().stream().mapToInt(e -> ((AccessAttr) e).count).min().getAsInt();
-        ArrayList pretendent = (ArrayList) keysAttr.values().stream().filter(e -> ((AccessAttr) e).count == minCount).collect(Collectors.toList());
+        int minCount = attr.stream().mapToInt(e -> e.count).min().getAsInt();
+        ArrayList pretendents = (ArrayList) attr.stream().filter(e -> e.count == minCount).collect(Collectors.toList());
         // if list contains one element, return it
-        if (pretendent.size() == 1) {
-            return pretendent.get(0);
+        if (pretendents.size() == 1) {
+            return (AccessAttr) pretendents.get(0);
         } else {
             // step 2: find from prepeared list oldest element
-            long tm = pretendent.stream().mapToLong(e -> ((AccessAttr) e).timeAccessed).min().getAsLong();
-            return pretendent.stream().filter(e -> ((AccessAttr) e).timeAccessed == tm).findFirst();
+            long tm = pretendents.stream().mapToLong(e -> ((AccessAttr) e).timeAccessed).min().getAsLong();
+            return (AccessAttr) pretendents.stream().filter(e -> ((AccessAttr) e).timeAccessed == tm).findFirst().get();
         }
     }
+
+//    public void setEventNotifier(RemoveFromCacheEvent ev) {
+//        notifier = ev;
+//    }
 
 }

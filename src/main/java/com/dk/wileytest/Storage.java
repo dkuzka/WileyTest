@@ -7,9 +7,21 @@ package com.dk.wileytest;
 
 public interface Storage {
 
-    void put(Object key, Object value);
+    /**
+     *
+     * @param key
+     * @param value
+     * @throws DuplicateKeyInCacheException
+     */
+    void put(Object key, Object value) throws DuplicateKeyInCacheException;
 
-    Object get(Object key);
+    /**
+     *
+     * @param key
+     * @return
+     * @throws KeyNotFoundInCacheException
+     */
+    Object get(Object key) throws KeyNotFoundInCacheException;
 
     Object findExpired();
 

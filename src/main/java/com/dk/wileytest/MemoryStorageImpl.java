@@ -10,42 +10,37 @@ import java.util.HashMap;
 public final class MemoryStorageImpl extends AbstractStorage {
 
     private RemoveFromCacheEvent notifier;
-    private HashMap cache;
+    private final HashMap cache;
 
-    private void setNotifier(RemoveFromCacheEvent ev) {
+    public void setNotifier(RemoveFromCacheEvent ev) {
         notifier = ev;
     }
 
-    @Override
-    void init(int size) {
-        super.init(size);
+    public MemoryStorageImpl(int size) {
+        init(size);
         cache = new HashMap<>(size);
     }
 
-//    public MemoryStorageImpl() {
-//        init(1);
-//    }
-    public MemoryStorageImpl(int size) {
-        init(size);
-    }
-
     @Override
-    public void put(Object key, Object value) {
+    public void put(Object key, Object value) throws DuplicateKeyInCacheException {
         super.put(key, value);
         cache.put(key, value);
     }
 
     @Override
-    public Object get(Object key) {
-        ((AccessAttr) keysAttr.get(key)).inc();
+    public Object get(Object key) throws KeyNotFoundInCacheException {
+        super.get(key);
         return cache.get(key);
     }
 
     @Override
-    public Object removeExpired() {
-        Object key = super.removeExpired();
+    public AccessAttr removeExpired() {
+        AccessAttr a = super.removeExpired();
 
-        if (key != null) {
+        if (a != null) {
+            Object key = a.key;
+
+            // save for notify
             Object value = cache.get(key);
 
             // remove
@@ -56,8 +51,8 @@ public final class MemoryStorageImpl extends AbstractStorage {
                 notifier.fire(key, value);
             }
         }
-        
-        return key;
+
+        return a;
     }
 
 }

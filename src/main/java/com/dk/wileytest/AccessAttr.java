@@ -13,13 +13,16 @@ public class AccessAttr {
 
     long timeAccessed;
     int count;
+    Object key;
 
-    AccessAttr() {
-        timeAccessed = System.currentTimeMillis();
-        count = 0;
+    AccessAttr(Object key) {
+        //timeAccessed = System.currentTimeMillis();
+        //count = 0;
+        this.key = key;
+        inc();
     }
 
-    void inc() {
+    final void inc() {
         count++;
         timeAccessed = System.currentTimeMillis();
     }
