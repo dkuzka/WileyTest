@@ -13,6 +13,7 @@ public class TesterMain {
 
     public static void main(final String[] args) {
         System.out.println("Hello Wiley");
+        System.out.println("Revision 2 (plus FileCache)");
 
         MemoryStorageImpl m = new MemoryStorageImpl(2);
         //m.setSize(0); // check range
