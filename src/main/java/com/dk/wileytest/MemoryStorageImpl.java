@@ -22,13 +22,13 @@ public final class MemoryStorageImpl extends AbstractStorage {
     }
 
     @Override
-    public void put(Object key, Object value) throws DuplicateKeyInCacheException {
+    public void put(Object key, Object value) throws DuplicateKeyInCacheException, Exception {
         super.put(key, value);
         cache.put(key, value);
     }
 
     @Override
-    public Object get(Object key) throws KeyNotFoundInCacheException {
+    public Object get(Object key) throws KeyNotFoundInCacheException, Exception {
         super.get(key);
         return cache.get(key);
     }

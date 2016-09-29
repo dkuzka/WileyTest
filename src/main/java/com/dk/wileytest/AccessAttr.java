@@ -17,7 +17,7 @@ public class AccessAttr {
 
     AccessAttr(Object key) {
         //timeAccessed = System.currentTimeMillis();
-        //count = 0;
+        this.count = -1;
         this.key = key;
         inc();
     }

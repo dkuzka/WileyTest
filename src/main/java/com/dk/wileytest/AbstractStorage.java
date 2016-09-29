@@ -6,8 +6,11 @@
 package com.dk.wileytest;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -21,11 +24,12 @@ public class AbstractStorage implements Storage {
     ArrayList<AccessAttr> attr;
     int capacity;
     //private RemoveFromCacheEvent notifier;
-    
+    private int liveTime = 3600000;
 
     final void init(int size) {
-        capacity = size;
+        //capacity = size;
         attr = new ArrayList<>(size);
+        setSize(size);
     }
 
     public AbstractStorage() {
@@ -37,7 +41,7 @@ public class AbstractStorage implements Storage {
     }
 
     @Override
-    public void put(Object key, Object value) throws DuplicateKeyInCacheException {
+    public void put(Object key, Object value) throws DuplicateKeyInCacheException, Exception {
         if (attr.stream().filter(e -> e.key.equals(key)).count() > 0) {
             throw new DuplicateKeyInCacheException(key != null ? key.toString() : "null");
         }
@@ -45,12 +49,12 @@ public class AbstractStorage implements Storage {
             removeExpired();
         }
         attr.add(new AccessAttr(key));
-        System.out.println("DEBUG: com.dk.wileytest.AbstractStorage.put(): key=" + key + " value=" + value);
+        System.out.println("DEBUG: " + this + ".put(): key=" + key + " value=" + value);
     }
 
     @Override
-    public Object get(Object key) throws KeyNotFoundInCacheException {
-        System.out.println("DEBUG: com.dk.wileytest.AbstractStorage.get(): key=" + key);
+    public Object get(Object key) throws KeyNotFoundInCacheException, Exception {
+        System.out.println("DEBUG: " + this + ".get(): key=" + key);
         try {
             attr.stream().filter(e -> e.key.equals(key)).findFirst().get().inc();
         } catch (NoSuchElementException ex) {
@@ -66,6 +70,7 @@ public class AbstractStorage implements Storage {
         if (a != null) {
             // remove from counter attr
             attr.remove(a);
+            System.out.println("DEBUG: " + this + ".removeExpired(): key=" + a.key);
         }
 
         return a;
@@ -89,21 +94,28 @@ public class AbstractStorage implements Storage {
         if (attr.size() < capacity) {
             return null;
         }
-        // step 1: find element with min access count
-        int minCount = attr.stream().mapToInt(e -> e.count).min().getAsInt();
-        ArrayList pretendents = (ArrayList) attr.stream().filter(e -> e.count == minCount).collect(Collectors.toList());
-        // if list contains one element, return it
-        if (pretendents.size() == 1) {
-            return (AccessAttr) pretendents.get(0);
-        } else {
-            // step 2: find from prepeared list oldest element
-            long tm = pretendents.stream().mapToLong(e -> ((AccessAttr) e).timeAccessed).min().getAsLong();
-            return (AccessAttr) pretendents.stream().filter(e -> ((AccessAttr) e).timeAccessed == tm).findFirst().get();
+
+        long now = System.currentTimeMillis();
+        Optional<AccessAttr> op;
+
+        // step 1: find time expired elements
+        op = attr.stream().filter(e -> (now >= e.timeAccessed + liveTime)).findFirst();
+        if (op.isPresent()) {
+            return op.get();
         }
+
+        // step 2: find element with min access count and time
+        int minCount = attr.stream().mapToInt(e -> e.count).min().getAsInt();
+        op = attr.stream().filter(e -> e.count == minCount).sorted((e1, e2) -> Long.compare(e1.timeAccessed, e2.timeAccessed)).findFirst();
+        return op.get();
     }
 
 //    public void setEventNotifier(RemoveFromCacheEvent ev) {
 //        notifier = ev;
 //    }
+    @Override
+    public void setLiveTime(int ms) {
+        this.liveTime = ms;
+    }
 
 }

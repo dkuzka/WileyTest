@@ -13,7 +13,7 @@ public interface Storage {
      * @param value
      * @throws DuplicateKeyInCacheException
      */
-    void put(Object key, Object value) throws DuplicateKeyInCacheException;
+    void put(Object key, Object value) throws DuplicateKeyInCacheException, Exception;
 
     /**
      *
@@ -21,9 +21,11 @@ public interface Storage {
      * @return
      * @throws KeyNotFoundInCacheException
      */
-    Object get(Object key) throws KeyNotFoundInCacheException;
+    Object get(Object key) throws KeyNotFoundInCacheException, Exception;
 
     Object findExpired();
 
     Object removeExpired();
+    
+    void setLiveTime(int ms);
 }
